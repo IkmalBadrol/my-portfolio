@@ -75,6 +75,7 @@ const Portfolio = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [submissionStatus, setSubmissionStatus] = useState('idle'); // 'idle', 'sending', 'success', 'error'
 
   // Handle scroll spy
   useEffect(() => {
@@ -121,12 +122,31 @@ const Portfolio = () => {
     }
   };
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    const { name, email, message } = contactForm;
-    const subject = `Portfolio Contact from ${name}`;
-    const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
-    window.location.href = `mailto:ikmalbadrol29@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSubmissionStatus('sending');
+
+    try {
+      const response = await fetch('https://formspree.io/f/ikmalbadrol29@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contactForm)
+      });
+
+      if (response.ok) {
+        setSubmissionStatus('success');
+        setContactForm({ name: '', email: '', message: '' });
+        // Reset status after 5 seconds
+        setTimeout(() => setSubmissionStatus('idle'), 5000);
+      } else {
+        setSubmissionStatus('error');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmissionStatus('error');
+    }
   };
 
   const navLinks = [
@@ -213,13 +233,13 @@ const Portfolio = () => {
       role: "Full Stack Developer",
       company: "SINEGY (Digital Asset Exchange)",
       period: "April 2025 - Present",
-      description: "Leading mobile app deployment to App Store/Play Store. Architecting automated reporting systems for regulatory compliance and maintaining high-availability backend microservices."
+      description: "Lead mobile app development and deployment to App Store/Play Store. Architecting automated reporting systems for regulatory compliance, and maintaining and enhancing high-availability web front-end and backend microservices for Crypto Exchange."
     },
     {
       role: "Software Engineer Intern",
       company: "Longbow Solutions Sdn Bhd",
       period: "Oct 2024 - March 2025",
-      description: "Developed SEO modules for IOI City Mall and integrated 3rd party apps. Conducted UAT for Self-Service Kiosks and POS systems."
+      description: "Developed SEO modules and enhance Online Ticketing System and Admin system for IOI City Mall and integrated 3rd party apps. Conducted UAT for Self-Service Kiosks and POS systems."
     },
     {
       role: "Computer Science Student",
@@ -256,7 +276,7 @@ const Portfolio = () => {
                 <span className="font-bold text-white text-xl">M</span>
               </div>
               <span className="text-xl font-bold tracking-tight">
-                Ikmal<span className="text-amber-500">Badrol</span>
+                Ikmal<span className="text-amber-500"> Badrol</span>
               </span>
             </div>
 
@@ -331,23 +351,6 @@ const Portfolio = () => {
       {/* Hero Section */}
       <section id="home" className="min-h-screen flex items-center justify-center pt-16 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-
-          <Reveal>
-            <div className="relative mb-8 group">
-              <div className={`absolute -inset-1 bg-gradient-to-r from-amber-500 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200`}></div>
-              <div className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 ${isDarkMode ? 'border-slate-800' : 'border-white'} shadow-2xl`}>
-                {/* REPLACE THE SRC BELOW WITH YOUR UPLOADED IMAGE PATH 
-                  e.g., src="/image_14f70b.jpg" or require('./image_14f70b.jpg') 
-                */}
-                <img
-                  src="\src\assets\ikmal.jpg"
-                  alt="Muhammad Ikmal"
-                  className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
-                />
-              </div>
-            </div>
-          </Reveal>
-
           <Reveal>
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-6 ${isDarkMode ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
               <span className="relative flex h-2 w-2">
@@ -758,9 +761,34 @@ const Portfolio = () => {
                         }`}
                     ></textarea>
                   </div>
-                  <button className="w-full py-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.6)] transition-all transform hover:scale-[1.02]">
-                    Send Message
+                  <button
+                    type="submit"
+                    disabled={submissionStatus === 'sending'}
+                    className={`w-full py-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.6)] transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 ${submissionStatus === 'sending' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {submissionStatus === 'sending' ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Sending...
+                      </>
+                    ) : submissionStatus === 'success' ? (
+                      'Message Sent!'
+                    ) : submissionStatus === 'error' ? (
+                      'Try Again'
+                    ) : (
+                      'Send Message'
+                    )}
                   </button>
+                  {submissionStatus === 'success' && (
+                    <p className="text-emerald-500 text-center text-sm mt-4 animate-in fade-in slide-in-from-top-2">
+                      Thanks! Your message has been sent successfully.
+                    </p>
+                  )}
+                  {submissionStatus === 'error' && (
+                    <p className="text-red-500 text-center text-sm mt-4">
+                      Oops! Something went wrong. Please try again later.
+                    </p>
+                  )}
                 </form>
               </div>
             </div>
@@ -770,11 +798,12 @@ const Portfolio = () => {
 
       {/* Footer */}
       <footer className={`py-12 border-t text-center ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-500' : 'border-gray-200 bg-white text-gray-500'}`}>
-        <div className="flex items-center justify-center gap-2 mb-4">
+        {/* <div className="flex items-center justify-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-white font-bold">M</div>
-        </div>
+        </div> */}
         <p className="text-sm">
-          © {new Date().getFullYear()} Muhammad Ikmal. Built with React.
+          {/* © {new Date().getFullYear()} Muhammad Ikmal. Built with React. */}
+          Let's Connect!
         </p>
       </footer>
 
